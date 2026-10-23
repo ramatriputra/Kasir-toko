@@ -1,0 +1,49 @@
+
+name: Build APK Kasir Perabot
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "kasir_perabot_flutter_starter.zip"
+      - ".github/workflows/build-apk.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ambil source code
+        uses: actions/checkout@v4
+
+      - name: Siapkan Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Ekstrak source code
+        run: |
+          mkdir source
+          unzip kasir_perabot_flutter_starter.zip -d source
+
+      - name: Buat proyek Android
+        run: flutter create --platforms=android --project-name kasir_perabot buildsrc
+
+      - name: Masukkan source aplikasi
+        run: |
+          cp source/pubspec.yaml buildsrc/pubspec.yaml
+          rm -rf buildsrc/lib
+          cp -R source/lib buildsrc/lib
+
+      - name: Bangun APK
+        run: |
+          cd buildsrc
+          flutter pub get
+          flutter build apk --release
+
+      - name: Simpan APK untuk diunduh
+        uses: actions/upload-artifact@v4
+        with:
+          name: kasir-perabot-apk
+          path: buildsrc/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
